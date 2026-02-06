@@ -1,2 +1,4 @@
 .env
-.db
+*.db
+.DS_Store
+.pytest_cache
