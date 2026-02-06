@@ -1,0 +1,170 @@
+Category,Volume (tickets),Volume (%),Sentiment,Notes,Required Workflow,Example Summaries
+Shipping Delay – Neutral Status Check,4700,37%,Neutral / Mildly Anxious,Polite; includes order #. Easy to automate with tracking macro + reassurance.,"Shipping Delay, Neutral Status Check
+
+WISMO Workflow
+
+1. Check the customer’s orders.
+
+   1. If no order found, ask for the order ID and check again.
+
+2. Give the current status update.
+
+   1. If unfulfilled, say it has not shipped yet.
+   2. If fulfilled and in transit, say it is on the way.
+   3. If delivered, say it is marked delivered.
+
+3. If it is still in transit, set the wait promise based on contact day.
+
+   1. Customer contacts Mon to Wed: ask them to wait until Friday. If not delivered by then, offer a free resend.
+   2. Customer contacts Thu to Sun: ask them to wait until early next week. If not delivered by then, offer a free resend.
+
+4. If customer asks for tracking, share the tracking link.
+
+5. If they reply after the promised date and it is still not delivered, escalate the ticket to let the human agent can process resend.
+","""Order #43189 shows ‘in transit’ for 10 days. Any update?"" ""Hi, just curious when my BuzzPatch will arrive to Toronto."" ""Can you confirm the estimated delivery date? Thanks!"""
+Wrong / Missing Item in Parcel,900,7%,Negative → Frustrated,"Needs apology, photo request, and re‑shipment. Offer freebie for high LTV.","Wrong or Missing Item in Parcel Process
+
+1. Check the customer’s order, items purchased, and what was fulfilled.
+
+2. Ask what happened so you can pick the right fix.
+
+   1. Missing item
+   2. Wrong item received
+
+3. Request photos to confirm and speed things up.
+
+   1. To get this sorted fast, could you send a photo of the items you received?
+   2. If there is a packing slip, ask for a photo of that too.
+   3. If possible, ask for a photo of the outside shipping label on the box.
+
+4. Offer the fastest resolution first.
+
+   1. Offer a free reship of the missing item or the correct item.
+   2. If they asked for a refund, explain you can resend it immediately, and it’s usually faster than a refund.
+
+5. If they do not want a reship, offer store credit first.
+
+   1. Offer store credit for the item value, plus a small bonus if your policy allows, for example 10%.
+   2. If they accept, issue the store credit and tag: “Wrong or Missing, Store Credit Issued”.
+
+6. If they decline store credit, refund in cash.
+
+   1. Refund to the original payment method.
+   2. Tag: “Wrong or Missing, Cash Refund Issued”.
+
+7. Close the loop.
+
+   1. If reship, escalate the ticket to support, so the support members can resend the order.
+   2. If store credit, confirm the credit amount and that it is available immediately at checkout.
+   3. If cash refund, confirm the amount and the expected processing time.","""Got Zen stickers instead of Focus—kids need them for school, help!"" ""My package arrived with only 2 of the 3 packs I paid for."" ""Received the pet collar but the tick stickers are missing."""
+Product Issue – “No Effect”,700,6%,Disappointed,Empathy + usage advice. Refund or upgrade option.,"Product Issue Process: No Effect
+
+1. Check the customer’s order, product, and status.
+
+2. Ask why it felt like “no effect” so you don’t apply the wrong fix.
+
+   1. Ask the goal: falling asleep, staying asleep, stress, or something else.
+   2. Ask usage: how many, what time, and for how many nights.
+
+3. Route based on what you learn.
+
+   1. If usage is off (too late, inconsistent, too short duration), share the correct usage and ask them to try for 3 nights.
+   2. If the product is a mismatch for their goal, offer a better fit product switch.
+
+4. If the customer is still disappointed after guidance:
+
+   1. Offer store credit with a 10% bonus instead of cash refund.
+   2. If they accept, issue credit and tag: “No Effect – Recovered”.
+   3. If they decline, refund in cash to the original payment method and tag: “No Effect – Cash Refund”.","""Kids still getting bitten even with 2 stickers on."" ""Focus patches aren’t helping my son concentrate."" ""Itch relief patch did nothing for the sting."""
+Refund Request – Standard,1100,9%,Negative but Polite,Linked to shipping/product issues. Refund flow.,"Refund Request Standard Process
+
+1. Check the customer’s order details and status.
+2. Ask for the reason for the refund request.
+
+   1. If the reason is product didn’t meet expectations:
+
+      1. Ask one quick follow up to identify the cause: falling asleep, staying asleep, comfort, taste, or no effect etc.
+      2. Share the correct usage tip based on the cause.
+      3. Offer a better fit swap option.
+      4. If the customer still wants a refund, offer store credit with a 10% bonus instead of cash refund.
+      5. If accepted, issue store credit and log the outcome with a tag.
+
+   2. If the reason is shipping delay:
+
+      1. If the customer contacts you on Monday or Tuesday, ask if they are okay waiting until Friday. If it is not delivered by then, offer a free replacement.
+      2. If the customer contacts you on Wednesday through Friday, ask if they are okay waiting until early next week. If it is not delivered by then, offer a free replacement.
+      3. If the customer refuses to wait, offer a free replacement immediately, then escalate the ticket so we can review. Tell customers this: ""Hey, I'm looping Monica, who is our Head of CS, she'll take it from there.""
+
+   3. If the reason is damaged or wrong item:
+
+      1. Offer a free replacement or store credit.
+      2. If the customer chooses replacement, escalete the ticket so we can review.
+      3. If the customer chooses store credit, issue credit with a small bonus if allowed.
+
+   4. If the reason is changed mind:
+
+      1. If unfulfilled, cancel the order and log the action by adding tags.
+      2. If fulfilled, offer store credit with a small bonus before processing a cash refund.","""Please refund order #51234; product arrived too late."" ""Want my money back—stickers don’t repel mosquitoes as promised."" ""Returning unused packs for a full refund, thanks."""
+Order Modification,400,3%,Neutral,Time‑sensitive. Can be automated if <2 h.,"Order Cancellation Process
+
+1. Check the customer’s orders.
+2. Ask for the reason for the cancellation.
+
+   1. If the reason is a shipping delay:
+
+      1. If the customer contacts you on Monday or Tuesday, ask if they are okay waiting until Friday. If it is not delivered by then, you can cancel it.
+      2. If the customer contacts you on Wednesday through Friday, ask if they are okay waiting until early next week.
+   2. If the reason is that the order was placed accidentally, cancel the order and add a tag to log the action.
+
+
+Order Update Shipping Address
+
+1. If a customer wants to update their shipping address:
+
+   1. Check whether they placed the order on the same date, and make sure the order status is unfulfilled.
+   2. If true, update the shipping address and tag the order with “customer verified address.”
+2. If you find any error, escalate the ticket to Monica, saying: “To make sure you get the right response, I’m looping in Monica, who is our Head of CS. She’ll take the conversation from there.”
+","""Accidentally ordered twice—please cancel one."" ""Realised I used wrong address—cancel so I can reorder."" ""Need to cancel order #67890 before it ships, thanks."""
+Positive Feedback,700,6%,Positive / Enthusiastic,Tag for marketing. Auto‑reply with referral code.,"Positive Feedback Process
+
+1. “Awww 🥰 {{first_name}},
+
+That is so amazing! 🙏 Thank you for that epic feedback!
+
+If it’s okay with you, would you mind if I send you a feedback request so you can share your thoughts on NATPAT and our response overall?
+
+It’s totally fine if you don’t have the time, but I thought I’d ask before sending a feedback request email 😊
+
+Caz”
+
+
+If they say YES and are happy to leave feedback, send the response below:
+
+2. “Awwww, thank you! ❤️
+
+Here’s the link to the review page: [https://trustpilot.com/evaluate/naturalpatch.com](https://trustpilot.com/evaluate/naturalpatch.com)
+
+Thanks so much! 🙏
+
+Caz xx”
+","""BuzzPatch saved our camping trip—no bites at all!"" ""The kids LOVE choosing their emoji stickers each night."" ""Focus patches actually helped my son finish homework."""
+Subscription / Billing Issues,250,2%,Negative → Urgent,Fix fast. Often double‑charge or skip fail.,"Subscription Process
+
+1. Check the subscription status on the Subscription Platform.
+2. Ask for the reason.
+
+   1. If the reason is “too many on hand right now”:
+      1. Offer to skip the next order instead. If they confirm, skip the next order for 1 month.
+      2. If they don’t confirm, offer a 20% discount on their next two orders.
+      3. If they still want to cancel, cancel the subscription.
+   2. If the reason is “didn’t like the product quality”:
+      1. Offer to swap to a different product. If they confirm, process the swap.
+      2. If they don’t confirm, cancel the subscription.
+","""I cancelled but still got charged—refund please."" ""Need to pause my monthly BuzzPatch delivery for August."" ""Credit card changed—how do I update details?"""
+Discount / Promo Code Problems,350,3%,Neutral → Mildly Frustrated,Quick win via code re‑issue.,"Discount Code Problems
+
+1. If a client wants to reclaim the code or is experiencing that the code is not valid, create a one-time discount code for that specific client. You can create a one-time 10% discount code with a 48-hour lifespan.
+
+2. After you create the code, send it to the customer and let them know it is valid for 48 hours.
+
+3. Only create one discount code for the customer.","""WELCOME10 code says invalid at checkout."" ""Forgot to apply discount—can you refund the difference?"" ""App won’t accept my loyalty points."""
