@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowUpIcon, ToolboxIcon, WrenchIcon } from "lucide-react"
+import { ArrowUpIcon, WrenchIcon } from "lucide-react"
 import { Textimation } from "textimation"
 
 import { Button } from "@/components/ui/button"
