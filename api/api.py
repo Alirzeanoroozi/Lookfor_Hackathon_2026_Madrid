@@ -121,7 +121,7 @@ def reply(session_id: str, req: ReplyRequest):
             customer_email="",
             first_name="",
             last_name="",
-            shopify_customer_id="",
+            shopify_customer_id="session_id",
             model="",
             prompt="",
         )
