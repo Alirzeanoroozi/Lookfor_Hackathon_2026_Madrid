@@ -143,12 +143,15 @@ def list_sessions(limit: int = 100) -> list[dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
-def get_session_by_shopify_customer_id(shopify_customer_id: str) -> dict[str, Any]:
-    """Get session by shopify_customer_id. Returns dict or None."""
+def get_session(shopify_customer_id: str) -> dict[str, Any]:
+    """Get session by shopify_customer_id. Returns dict or first session if not found."""
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM email_sessions WHERE shopify_customer_id = ?;", (shopify_customer_id,))
     row = cur.fetchone()
+    if not row:
+        cur.execute("SELECT * FROM email_sessions ORDER BY id ASC LIMIT 1;")
+        row = cur.fetchone()
     conn.close()
     return dict(row) if row else None
 

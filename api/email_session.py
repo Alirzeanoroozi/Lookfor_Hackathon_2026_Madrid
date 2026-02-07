@@ -268,6 +268,8 @@ class EmailSession:
             first_name=row["first_name"],
             last_name=row["last_name"],
             shopify_customer_id=row["shopify_customer_id"],
+            model="model",
+            prompt="prompt",
         )
 
     def _build_tools(self) -> Dict[str, Any]:
