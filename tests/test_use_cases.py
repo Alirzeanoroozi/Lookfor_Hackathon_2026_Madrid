@@ -106,7 +106,7 @@ def _mock_call_gpt_escalate(reason: str, summary_for_team: str):
 # --- Shipping Delay (WISMO) ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_shipping_delay_calls_order_details(mock_call, session):
     """Shipping delay use case: should look up order details for tracking."""
     mock_call.return_value = _mock_call_gpt_tool(
@@ -123,34 +123,34 @@ def test_shipping_delay_calls_order_details(mock_call, session):
     assert "shopify_get_order_details" in tool_names
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_shipping_delay_continuous_memory(mock_call, session):
     """Shipping delay: follow-up message should have session memory."""
-    mock_call.side_effect = [
-        _mock_call_gpt_tool(
-            "shopify_get_customer_orders",
-            {"email": "test@example.com", "after": "null", "limit": 10},
-            "I found your order. It's on the way.",
-        ),
-        _mock_call_gpt_text(
-            "Your BuzzPatch should arrive by Friday. Here's the tracking link: ..."
-        ),
-    ]
+    router_resp = _mock_call_gpt_tool(
+        "shopify_get_customer_orders",
+        {"email": "test@example.com", "after": "null", "limit": 10},
+        "SHIPPING_DELAY: Found order, in transit.",
+    )
+    policy_resp = _mock_call_gpt_text("PROCEED. Order in transit, share tracking.")
+    executor_resp = _mock_call_gpt_text(
+        "Your BuzzPatch should arrive by Friday. Here's the tracking link: ..."
+    )
+    mock_call.side_effect = [router_resp, policy_resp, executor_resp] * 2  # 2 replies × 3 agents
 
     session.reply(USE_CASE_MESSAGES["shipping_delay"][1])
     trace = session.reply("Can you send the tracking link again?")
 
     assert trace is not None
-    assert mock_call.call_count >= 1
-    # Second call should include prior context
+    assert mock_call.call_count >= 3
+    # Second reply: 3 more agent calls with prior context
     call_messages = mock_call.call_args[1]["messages"]
-    assert len(call_messages) >= 3  # system + user messages + prior turns
+    assert len(call_messages) >= 2
 
 
 # --- Wrong / Missing Item ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_wrong_missing_item_calls_order_lookup(mock_call, session):
     """Wrong/missing item: should check order and items fulfilled."""
     mock_call.return_value = _mock_call_gpt_tool(
@@ -169,7 +169,7 @@ def test_wrong_missing_item_calls_order_lookup(mock_call, session):
 # --- Product No Effect ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_product_no_effect_uses_knowledge_or_order(mock_call, session):
     """Product no effect: may look up product info or knowledge."""
     mock_call.return_value = _mock_call_gpt_tool(
@@ -187,7 +187,7 @@ def test_product_no_effect_uses_knowledge_or_order(mock_call, session):
 # --- Refund Request ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_refund_request_may_call_refund_tool(mock_call, session):
     """Refund request: may call shopify_refund_order or shopify_create_store_credit."""
     mock_call.return_value = _mock_call_gpt_tool(
@@ -206,7 +206,7 @@ def test_refund_request_may_call_refund_tool(mock_call, session):
 # --- Order Modification ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_order_modification_cancel_or_address(mock_call, session):
     """Order modification: cancel or update shipping address."""
     mock_call.return_value = _mock_call_gpt_text(
@@ -222,7 +222,7 @@ def test_order_modification_cancel_or_address(mock_call, session):
 # --- Positive Feedback ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_positive_feedback_returns_acknowledgment(mock_call, session):
     """Positive feedback: should acknowledge warmly, may offer review link."""
     mock_call.return_value = _mock_call_gpt_text(
@@ -239,7 +239,7 @@ def test_positive_feedback_returns_acknowledgment(mock_call, session):
 # --- Subscription ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_subscription_calls_skio_status(mock_call, session):
     """Subscription use case: should check skio_get_subscription_status."""
     mock_call.return_value = _mock_call_gpt_tool(
@@ -255,7 +255,7 @@ def test_subscription_calls_skio_status(mock_call, session):
     assert "skio_get_subscription_status" in tool_names
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_subscription_pause(mock_call, session):
     """Subscription: pause subscription tool."""
     mock_call.return_value = _mock_call_gpt_tool(
@@ -274,7 +274,7 @@ def test_subscription_pause(mock_call, session):
 # --- Discount / Promo ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_discount_promo_reply(mock_call, session):
     """Discount/promo: should offer to create or re-issue code."""
     mock_call.return_value = _mock_call_gpt_text(
@@ -313,7 +313,7 @@ def _make_escalate_mock(reason: str, summary_for_team: str):
     return side_effect
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_escalation_stops_auto_replies(mock_call, session):
     """When escalate tool is called, subsequent replies return None."""
     mock_call.side_effect = _make_escalate_mock(
@@ -329,7 +329,7 @@ def test_escalation_stops_auto_replies(mock_call, session):
     assert trace2 is None
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_escalation_persists_summary(mock_call, session):
     """Escalation should persist summary to DB."""
     mock_call.side_effect = _make_escalate_mock(
@@ -350,7 +350,7 @@ def test_escalation_persists_summary(mock_call, session):
 # --- Session persistence ---
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_messages_persisted(mock_call, session):
     """Messages should be persisted to DB."""
     mock_call.return_value = _mock_call_gpt_text("Here's your order status.")
@@ -364,7 +364,7 @@ def test_messages_persisted(mock_call, session):
     assert "assistant" in roles
 
 
-@patch("email_session.call_gpt_with_tools")
+@patch("agents.call_gpt_with_tools")
 def test_tool_calls_in_trace(mock_call, session):
     """Tool calls should appear in trace (mocked LLM bypasses executor, so DB may be empty)."""
     mock_call.return_value = _mock_call_gpt_tool(

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
+from call_gpt import call_gpt_with_tools
 from tools import Tool
-
 
 class Message(dict):
     """
     Simple message type: {"role": "user|agent|system", "content": str, "sender": str}
     You can extend this later with more fields (e.g. tools used, metadata, etc.).
     """
-
 
 class Agent(Protocol):
     """
@@ -56,6 +55,60 @@ class SimpleAgent:
             role="agent",
             content=reply,
             sender=self.name,
+        )
+
+
+@dataclass
+class LLMAgent:
+    """
+    LLM-powered agent that can call tools. Uses call_gpt_with_tools.
+    """
+
+    name: str
+    system_prompt: str
+    tool_definitions: List[Dict[str, Any]]
+    tool_executor: Callable[[str, Dict[str, Any]], str]
+    tool_call_collector: Optional[List[Dict[str, Any]]] = None
+
+    def act(self, messages: List[Message]) -> Optional[Message]:
+        openai_messages: List[Dict[str, Any]] = [{"role": "system", "content": self.system_prompt}]
+        for m in messages:
+            role = m.get("role", "user")
+            content = m.get("content", "")
+            sender = m.get("sender", role)
+            if role == "system":
+                continue  # use our own system prompt
+            if role == "user":
+                openai_messages.append({"role": "user", "content": content})
+            elif role == "agent":
+                openai_messages.append({"role": "user", "content": f"[{sender}]: {content}"})
+
+        result = call_gpt_with_tools(
+            messages=openai_messages,
+            tools=self.tool_definitions,
+            tool_executor=self.tool_executor,
+            temperature=0.3,
+            max_tokens=1024,
+            max_tool_rounds=5,
+        )
+
+        content = result.get("content", "")
+        tool_calls = result.get("tool_calls", [])
+
+        if self.tool_call_collector is not None:
+            for tc in tool_calls:
+                tc_copy = dict(tc)
+                tc_copy["agent"] = self.name
+                self.tool_call_collector.append(tc_copy)
+
+        if not content and not tool_calls:
+            return None
+
+        return Message(
+            role="agent",
+            content=content or "(no text output)",
+            sender=self.name,
+            tool_calls=tool_calls,
         )
 
 

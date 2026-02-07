@@ -70,8 +70,13 @@ Docker makes evaluation easy and reproducible.
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    EmailSession (email_session.py)                   │
 │  - Session start (customer email, name, shopify_customer_id)         │
-│  - Continuous memory via DB                                          │
-│  - Orchestrates LLM + tools + escalation                             │
+│  - Multi-agent pipeline: Router → Policy → Executor                  │
+└─────────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  MultiAgentSystem (agents.py)                                        │
+│  RouterAgent → PolicyAgent → ExecutorAgent (each LLM + tools)        │
 └─────────────────────────────────────────────────────────────────────┘
           │                    │                    │
           ▼                    ▼                    ▼
@@ -85,23 +90,20 @@ Docker makes evaluation easy and reproducible.
 
 ### Agents
 
-The system uses a **single LLM agent** (GPT via `call_gpt.py`) that:
+The system uses a **multi-agent pipeline** (Router → Policy → Executor):
 
-- Receives full conversation history and customer context (email, name, Shopify ID)
-- Decides which tools to call and when to escalate
-- Produces the final reply to the customer
+- **RouterAgent**: Classifies the request and gathers context. Calls `shopify_get_order_details`, `shopify_get_customer_orders`, `skio_get_subscription_status`. Outputs workflow type (e.g. SHIPPING_DELAY, REFUND_REQUEST).
 
-The `agents.py` module defines a `MultiAgentSystem` and `SimpleAgent` protocol for optional multi-agent collaboration (round-robin, specialized agents); the production email flow currently uses the single LLM + tools pattern.
+- **PolicyAgent**: Checks workflow rules via `shopify_get_related_knowledge_source`. Can call `escalate` when policy requires human review. Outputs PROCEED or escalation.
+
+- **ExecutorAgent**: Executes actions (refunds, store credit, subscription pause/cancel, order lookup) and produces the final customer-facing reply.
 
 ### Routing
 
-Routing is **implicit**: the LLM chooses actions based on the customer message:
+**RouterAgent** explicitly classifies and routes:
 
-- Order lookup → `shopify_get_order_details` or `shopify_get_customer_orders`
-- Refund / store credit → `shopify_refund_order`, `shopify_create_store_credit`
-- Subscription status or changes → `skio_*` tools
-- Policy / FAQ questions → `shopify_get_related_knowledge_source`
-- Unsafe or out-of-scope → `escalate`
+- Gathers order/subscription context via tools
+- Passes classification to Policy and Executor
 
 ### Retrieval
 

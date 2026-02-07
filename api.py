@@ -1,15 +1,14 @@
 """
 FastAPI backend for the email support session system.
 """
-
 from __future__ import annotations
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from db import init_db
 from email_session import EmailSession
@@ -28,30 +27,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.on_event("startup")
 def startup():
     init_db()
-
 
 @app.get("/health")
 def health():
     """Health check endpoint."""
     return {"status": "ok"}
 
-
-# --- Request / Response models ---
-
-
-from pydantic import BaseModel
-
-
 class SessionStartRequest(BaseModel):
     customer_email: str
     first_name: str
     last_name: str
     shopify_customer_id: str
-
 
 class SessionStartResponse(BaseModel):
     session_id: int
@@ -60,10 +49,8 @@ class SessionStartResponse(BaseModel):
     last_name: str
     shopify_customer_id: str
 
-
 class ReplyRequest(BaseModel):
     message: str
-
 
 class ReplyResponse(BaseModel):
     session_id: int
@@ -71,7 +58,6 @@ class ReplyResponse(BaseModel):
     final_message: str | None
     tool_calls: list[dict]
     actions_taken: list[str]
-
 
 class SessionResponse(BaseModel):
     session_id: int
@@ -81,17 +67,12 @@ class SessionResponse(BaseModel):
     shopify_customer_id: str
     escalated: bool
 
-
 class TraceResponse(BaseModel):
     session_id: int
     customer_email: str
     escalated: bool
     messages: list[dict]
     tool_calls: list[dict]
-
-
-# --- Endpoints ---
-
 
 @app.post("/sessions", response_model=SessionStartResponse)
 def start_session(req: SessionStartRequest):
@@ -110,7 +91,6 @@ def start_session(req: SessionStartRequest):
         shopify_customer_id=session.shopify_customer_id,
     )
 
-
 @app.get("/sessions/{session_id}", response_model=SessionResponse)
 def get_session(session_id: int):
     """Get session info."""
@@ -126,7 +106,6 @@ def get_session(session_id: int):
         shopify_customer_id=session.shopify_customer_id,
         escalated=row.get("escalated", False),
     )
-
 
 @app.post("/sessions/{session_id}/reply", response_model=ReplyResponse)
 def reply(session_id: int, req: ReplyRequest):
@@ -147,7 +126,6 @@ def reply(session_id: int, req: ReplyRequest):
         tool_calls=trace.tool_calls if trace else [],
         actions_taken=trace.actions_taken if trace else [],
     )
-
 
 @app.get("/sessions/{session_id}/trace", response_model=TraceResponse)
 def get_trace(session_id: int):

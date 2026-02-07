@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import db
-from call_gpt import call_gpt_with_tools
+from agents import LLMAgent, Message, MultiAgentSystem
 from tools import (
     ShopifyGetCustomerOrdersTool,
     ShopifyGetOrderDetailsTool,
@@ -148,6 +148,30 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
             },
         },
     },
+]
+
+# Tool subsets per agent
+ROUTER_TOOLS = [
+    t for t in TOOL_DEFINITIONS
+    if t["name"] in ("shopify_get_order_details", "shopify_get_customer_orders", "skio_get_subscription_status")
+]
+POLICY_TOOLS = [
+    t for t in TOOL_DEFINITIONS
+    if t["name"] in ("shopify_get_related_knowledge_source", "escalate")
+]
+EXECUTOR_TOOLS = [
+    t for t in TOOL_DEFINITIONS
+    if t["name"] in (
+        "shopify_get_order_details",
+        "shopify_get_customer_orders",
+        "shopify_refund_order",
+        "shopify_create_store_credit",
+        "skio_get_subscription_status",
+        "skio_pause_subscription",
+        "skio_cancel_subscription",
+        "shopify_get_related_knowledge_source",
+        "escalate",
+    )
 ]
 
 
@@ -295,20 +319,17 @@ class EmailSession:
 
     def reply(self, customer_message: str) -> Optional[SessionTrace]:
         """
-        Process a new customer message and generate a reply.
-
-        Returns SessionTrace (observable) or None if session is escalated
-        (no automatic reply).
+        Process a new customer message and generate a reply via multi-agent pipeline:
+        Router -> Policy -> Executor. Each agent can call tools.
         """
         db.init_db()
 
         if db.is_session_escalated(self.session_id):
-            return None  # No automatic replies after escalation
+            return None
 
-        # Persist customer message
         db.add_message(self.session_id, "user", customer_message, sender="customer")
 
-        messages = self._messages_for_llm(customer_message)
+        tool_call_collector: List[Dict[str, Any]] = []
 
         def executor(name: str, args: Dict[str, Any]) -> str:
             out = self._tool_executor(name, args)
@@ -319,18 +340,71 @@ class EmailSession:
             db.add_tool_call(self.session_id, name, args, parsed)
             return out
 
-        result = call_gpt_with_tools(
-            messages=messages,
-            tools=TOOL_DEFINITIONS,
-            tool_executor=executor,
-            temperature=0.3,
-            max_tokens=1024,
+        sys_context = (
+            f"Customer: {self.first_name} {self.last_name} <{self.customer_email}>, "
+            f"Shopify customer ID: {self.shopify_customer_id}."
         )
 
-        content = result.get("content", "")
-        tool_calls = result.get("tool_calls", [])
+        router = LLMAgent(
+            name="RouterAgent",
+            system_prompt=(
+                f"You are the Router agent for email support. {sys_context} "
+                "Your job: classify the request and gather context. Use tools to look up orders or subscriptions. "
+                "Output a short classification: e.g. SHIPPING_DELAY, REFUND_REQUEST, SUBSCRIPTION, WRONG_ITEM, PRODUCT_ISSUE, etc. "
+                "Summarize what you found and what workflow applies. Pass this to Policy."
+            ),
+            tool_definitions=ROUTER_TOOLS,
+            tool_executor=executor,
+            tool_call_collector=tool_call_collector,
+        )
 
-        # Check if we escalated (executor already persisted it)
+        policy = LLMAgent(
+            name="PolicyAgent",
+            system_prompt=(
+                f"You are the Policy agent. {sys_context} "
+                "You receive Router's classification. Check workflow rules using shopify_get_related_knowledge_source. "
+                "If we cannot safely proceed or policy requires human review, call the escalate tool. "
+                "Otherwise output: PROCEED with a brief note for the Executor."
+            ),
+            tool_definitions=POLICY_TOOLS,
+            tool_executor=executor,
+            tool_call_collector=tool_call_collector,
+        )
+
+        executor_agent = LLMAgent(
+            name="ExecutorAgent",
+            system_prompt=(
+                f"You are the Executor agent. {sys_context} "
+                "You receive Router's analysis and Policy's decision. Execute the appropriate actions using tools: "
+                "refunds, store credit, subscription pause/cancel, order lookup, etc. "
+                "Produce the final customer-facing reply: helpful, concise, professional. "
+                "If Policy escalated, do not execute—acknowledge escalation only."
+            ),
+            tool_definitions=EXECUTOR_TOOLS,
+            tool_executor=executor,
+            tool_call_collector=tool_call_collector,
+        )
+
+        mas = MultiAgentSystem(agents=[router, policy, executor_agent])
+
+        rows = db.get_session_messages(self.session_id)
+        initial: List[Dict[str, Any]] = []
+        for r in rows[:-1]:  # exclude the last user message we just added
+            role = r["role"]
+            content = r["content"] or ""
+            if role == "user":
+                initial.append(Message(role="user", content=content, sender="customer"))
+            elif role == "assistant":
+                initial.append(Message(role="agent", content=content, sender="agent"))
+
+        history = mas.run(
+            user_message=customer_message,
+            max_turns=1,
+            initial_messages=initial,
+        )
+
+        tool_calls = tool_call_collector
+
         if db.is_session_escalated(self.session_id):
             customer_facing = (
                 "Thank you for reaching out. We've escalated your request to our team. "
@@ -347,14 +421,22 @@ class EmailSession:
                 actions_taken=actions,
             )
 
-        # Persist assistant reply
+        content = ""
+        for m in reversed(history):
+            if m.get("sender") == "ExecutorAgent" and m.get("content"):
+                content = m.get("content", "")
+                if content != "(no text output)":
+                    break
+        if not content:
+            content = history[-1].get("content", "") if history else "I apologize, I couldn't process that. Please try again."
+
         db.add_message(self.session_id, "assistant", content, sender="agent")
 
         actions = []
         for tc in tool_calls:
             name = tc.get("name", "")
             if name and name != "escalate":
-                actions.append(f"{name}({json.dumps(tc.get('arguments', {}))})")
+                actions.append(f"{tc.get('agent', '')}/{name}({json.dumps(tc.get('arguments', {}))})")
 
         return SessionTrace(
             final_message=content,
