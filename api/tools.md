@@ -1,10 +1,76 @@
+# Uniform API Response Contract
+
+All endpoints return **HTTP 200** (hackathon simplification).
+
+## Success (always `200`)
+
+- **Content-Type:** `application/json`
+- **Body:**
+    - `success: true`
+    - Optional `data` only when there’s meaningful structured output
+
+```json
+{ "success": true }
+
+```
+
+or
+
+```json
+{ "success": true, "data": {} }
+
+```
+
+## Failure (always `200`)
+
+- **Content-Type:** `application/json`
+- **Body:**
+    - `success: false`
+    - `error: string` (human-readable explanation)
+
+```json
+{ "success": false, "error": "Shopify returned errors when cancelling order. Order ID is invalid." }
+
+```
+
+---
+
+### Params Standard → https://json-schema.org/
+
+---
+
+# Tool List (sorted by handle)
+
+1. `shopify_add_tags`
+2. `shopify_cancel_order`
+3. `shopify_create_discount_code`
+4. `shopify_create_return`
+5. `shopify_create_store_credit`
+6. `shopify_get_collection_recommendations`
+7. `shopify_get_customer_orders`
+8. `shopify_get_order_details`
+9. `shopify_get_product_details`
+10. `shopify_get_product_recommendations`
+11. `shopify_get_related_knowledge_source`
+12. `shopify_refund_order`
+13. `shopify_update_order_shipping_address`
+14. `skio_cancel_subscription`
+15. `skio_get_subscription_status`
+16. `skio_pause_subscription`
+17. `skio_skip_next_order_subscription`
+18. `skio_unpause_subscription`
+
+---
+
+# Tool Catalog
+
 ## 1) Shopify Add Tags (`shopify_add_tags`)
 
 **Description:** Add tags to an order, a draft order, a customer, a product, or an online store article.
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/add_tags`
+- **POST** `{API_URL}/hackathon/add_tags`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -51,7 +117,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/cancel_order`
+- **POST** `{API_URL}/hackathon/cancel_order`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -110,7 +176,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/create_discount_code`
+- **POST** `{API_URL}/hackathon/create_discount_code`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -161,7 +227,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/create_return`
+- **POST** `{API_URL}/hackathon/create_return`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -205,7 +271,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/create_store_credit`
+- **POST** `{API_URL}/hackathon/create_store_credit`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -266,7 +332,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get_collection_recommendations`
+- **POST** `{API_URL}/hackathon/get_collection_recommendations`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -316,7 +382,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get_customer_orders`
+- **POST** `{API_URL}/hackathon/get_customer_orders`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -374,7 +440,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get_order_details`
+- **POST** `{API_URL}/hackathon/get_order_details`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -427,7 +493,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get_product_details`
+- **POST** `{API_URL}/hackathon/get_product_details`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -481,7 +547,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get_product_recommendations`
+- **POST** `{API_URL}/hackathon/get_product_recommendations`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -531,7 +597,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get_related_knowledge_source`
+- **POST** `{API_URL}/hackathon/get_related_knowledge_source`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -584,7 +650,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/refund_order`
+- **POST** `{API_URL}/hackathon/refund_order`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -633,7 +699,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/update_order_shipping_address`
+- **POST** `{API_URL}/hackathon/update_order_shipping_address`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -691,7 +757,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/cancel-subscription`
+- **POST** `{API_URL}/hackathon/cancel-subscription`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -731,13 +797,13 @@
 
 ---
 
-## 15) Skio Get Subscription Status (`skio_get_subscription_status`)
+## 15) Skio Get Subscriptions(`skio_get_subscriptions`)
 
 **Description:** Gets the subscription status of a customer.
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/get-subscription-status`
+- **POST** `{API_URL}/hackathon/get-subscriptions`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -761,11 +827,22 @@
 ```json
 {
   "success": true,
-  "data": {
-    "status": "ACTIVE",
+  "data": [
+  {
+    "status": "CANCELLED",
+    "subscriptionId": "sub_122",
+    "nextBillingDate": null
+  },
+   {
+    "status": "PAUSED",
     "subscriptionId": "sub_123",
+    "nextBillingDate": "2026-05-01"
+  },
+  {
+    "status": "ACTIVE",
+    "subscriptionId": "sub_124",
     "nextBillingDate": "2026-03-01"
-  }
+  }]
 }
 
 ```
@@ -788,7 +865,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/pause-subscription`
+- **POST** `{API_URL}/hackathon/pause-subscription`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -830,7 +907,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/skip-next-order-subscription`
+- **POST** `{API_URL}/hackathon/skip-next-order-subscription`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**
@@ -871,7 +948,7 @@
 
 **API**
 
-- **POST** `{API_URL}/hackhaton/unpause-subscription`
+- **POST** `{API_URL}/hackathon/unpause-subscription`
 - Headers: `Content-Type: application/json`
 
 **Params (`paramsJsonSchema`)**

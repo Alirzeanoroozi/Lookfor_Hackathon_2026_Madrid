@@ -11,17 +11,17 @@ from agents import LLMAgent, Message, MultiAgentSystem
 from tools import (
     ShopifyGetCustomerOrdersTool,
     ShopifyGetOrderDetailsTool,
-    ShopifyGetRelatedKnowledgeSourceTool,
-    ShopifyRefundOrderTool,
+    GetRelatedKnowledgeSourceTool,
+    RefundOrderTool,
     ShopifyCreateStoreCreditTool,
-    SkioGetSubscriptionStatusTool,
-    SkioPauseSubscriptionTool,
-    SkioCancelSubscriptionTool,
+    GetSubscriptionStatusTool,
+    PauseSubscriptionTool,
+    CancelSubscriptionTool,
 )
 
 TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     {
-        "name": "shopify_get_order_details",
+        "name": "get_order_details",
         "description": "Fetch detailed information for a single order by ID. Use order number like #1234.",
         "parameters": {
             "type": "object",
@@ -30,7 +30,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "shopify_get_customer_orders",
+        "name": "get_customer_orders",
         "description": "Get customer orders by email. Use 'null' for after on first page.",
         "parameters": {
             "type": "object",
@@ -43,7 +43,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "shopify_refund_order",
+        "name": "refund_order",
         "description": "Refund an order. orderId is the full GID.",
         "parameters": {
             "type": "object",
@@ -58,7 +58,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "shopify_create_store_credit",
+        "name": "create_store_credit",
         "description": "Credit store credit to a customer.",
         "parameters": {
             "type": "object",
@@ -78,7 +78,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "skio_get_subscription_status",
+        "name": "get_subscription_status",
         "description": "Get subscription status for a customer by email.",
         "parameters": {
             "type": "object",
@@ -87,7 +87,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "skio_pause_subscription",
+        "name": "pause_subscription",
         "description": "Pause a Skio subscription until a date.",
         "parameters": {
             "type": "object",
@@ -99,7 +99,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "skio_cancel_subscription",
+        "name": "cancel_subscription",
         "description": "Cancel a Skio subscription.",
         "parameters": {
             "type": "object",
@@ -111,7 +111,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
         },
     },
     {
-        "name": "shopify_get_related_knowledge_source",
+        "name": "get_related_knowledge_source",
         "description": "Retrieve FAQs, PDFs, blog articles about a question. Use null for productId if not product-specific.",
         "parameters": {
             "type": "object",
@@ -142,26 +142,64 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
 # Tool subsets per agent
 ROUTER_TOOLS = [
     t for t in TOOL_DEFINITIONS
-    if t["name"] in ("shopify_get_order_details", "shopify_get_customer_orders", "skio_get_subscription_status")
+    if t["name"] in ("get_order_details", "get_customer_orders", "get_subscription_status")
 ]
 POLICY_TOOLS = [
     t for t in TOOL_DEFINITIONS
-    if t["name"] in ("shopify_get_related_knowledge_source", "escalate")
+    if t["name"] in ("get_related_knowledge_source", "escalate")
 ]
 EXECUTOR_TOOLS = [
     t for t in TOOL_DEFINITIONS
     if t["name"] in (
-        "shopify_get_order_details",
-        "shopify_get_customer_orders",
-        "shopify_refund_order",
-        "shopify_create_store_credit",
-        "skio_get_subscription_status",
-        "skio_pause_subscription",
-        "skio_cancel_subscription",
-        "shopify_get_related_knowledge_source",
+        "get_order_details",
+        "get_customer_orders",
+        "refund_order",
+        "create_store_credit",
+        "get_subscription_status",
+        "pause_subscription",
+        "cancel_subscription",
+        "get_related_knowledge_source",
         "escalate",
     )
 ]
+
+# Workflows from use_cases.csv – agents use these to route and execute correctly
+WORKFLOW_REFERENCE = open("prompts.txt").read()
+# WORKFLOW_REFERENCE = """
+# ## Workflow Categories & Examples
+
+# 1. **SHIPPING_DELAY** (WISMO – Where Is My Order)
+#    - Examples: "Order #43189 shows in transit for 10 days", "When will my BuzzPatch arrive?", "Confirm estimated delivery date"
+#    - Rules: Check orders → Give status (unfulfilled/shipped/delivered) → Set wait promise by contact day (Mon–Wed → Friday; Thu–Sun → early next week) → Share tracking if asked → Escalate if not delivered by promise date
+
+# 2. **WRONG_MISSING_ITEM**
+#    - Examples: "Got Zen stickers instead of Focus", "Only 2 of 3 packs arrived", "Tick stickers missing"
+#    - Rules: Check order/fulfillment → Ask missing vs wrong → Request photos → Offer reship first, then store credit (10% bonus), then cash refund
+
+# 3. **PRODUCT_NO_EFFECT**
+#    - Examples: "Kids still getting bitten", "Focus patches aren't helping", "Itch patch did nothing"
+#    - Rules: Check order/product → Ask goal and usage → If usage off, share correct usage + try 3 nights → If product mismatch, offer swap → If still disappointed: store credit 10% bonus, else cash refund
+
+# 4. **REFUND_REQUEST**
+#    - Examples: "Please refund order #51234; arrived too late", "Want money back—stickers don't work", "Returning for full refund"
+#    - Rules: Check order → Ask reason → Route: product issue (usage tip, swap, store credit first) | shipping (wait promise, replacement) | damaged/wrong (replacement or store credit) | changed mind (cancel if unfulfilled, store credit before cash if fulfilled)
+
+# 5. **ORDER_MODIFICATION**
+#    - Examples: "Accidentally ordered twice—cancel one", "Wrong address—cancel so I can reorder", "Cancel order #67890 before it ships"
+#    - Rules: Cancel: ask reason, shipping delay → wait promise; accidental → cancel + tag. Address update: same-day order, unfulfilled only → update + tag "customer verified address"; else escalate
+
+# 6. **POSITIVE_FEEDBACK**
+#    - Examples: "BuzzPatch saved our camping trip", "Kids LOVE the emoji stickers", "Focus patches helped my son"
+#    - Rules: Warm thank-you, offer feedback request. If yes → send Trustpilot link.
+
+# 7. **SUBSCRIPTION**
+#    - Examples: "Cancelled but still charged", "Pause monthly delivery for August", "Update credit card"
+#    - Rules: Check subscription status → "Too many on hand" → offer skip next order, else 20% discount, else cancel | "Didn't like quality" → offer swap, else cancel
+
+# 8. **DISCOUNT_PROMO**
+#    - Examples: "WELCOME10 says invalid", "Forgot to apply discount", "Loyalty points won't apply"
+#    - Rules: Create one-time 10% discount code, 48h lifespan. Send to customer. Only one code per customer.
+# """
 
 @dataclass
 class SessionTrace:
@@ -231,14 +269,14 @@ class EmailSession:
         if self._tools:
             return self._tools
         self._tools = {
-            "shopify_get_order_details": ShopifyGetOrderDetailsTool(),
-            "shopify_get_customer_orders": ShopifyGetCustomerOrdersTool(),
-            "shopify_refund_order": ShopifyRefundOrderTool(),
-            "shopify_create_store_credit": ShopifyCreateStoreCreditTool(),
-            "skio_get_subscription_status": SkioGetSubscriptionStatusTool(),
-            "skio_pause_subscription": SkioPauseSubscriptionTool(),
-            "skio_cancel_subscription": SkioCancelSubscriptionTool(),
-            "shopify_get_related_knowledge_source": ShopifyGetRelatedKnowledgeSourceTool(),
+            "get_order_details": ShopifyGetOrderDetailsTool(),
+            "get_customer_orders": ShopifyGetCustomerOrdersTool(),
+            "refund_order": RefundOrderTool(),
+            "create_store_credit": ShopifyCreateStoreCreditTool(),
+            "get_subscription_status": GetSubscriptionStatusTool(),
+            "pause_subscription": PauseSubscriptionTool(),
+            "cancel_subscription": CancelSubscriptionTool(),
+            "get_related_knowledge_source": GetRelatedKnowledgeSourceTool(),
         }
         return self._tools
 
@@ -270,7 +308,7 @@ class EmailSession:
             return json.dumps({"success": False, "error": f"Unknown tool: {tool_name}"})
 
         kwargs = dict(arguments)
-        if tool_name == "shopify_get_customer_orders":
+        if tool_name == "get_customer_orders":
             if kwargs.get("after") is None or kwargs.get("after") == "null":
                 kwargs["after"] = "null"
         try:
@@ -333,10 +371,14 @@ class EmailSession:
         router = LLMAgent(
             name="RouterAgent",
             system_prompt=(
-                f"You are the Router agent for email support. {sys_context} "
-                "Your job: classify the request and gather context. Use tools to look up orders or subscriptions. "
-                "Output a short classification: e.g. SHIPPING_DELAY, REFUND_REQUEST, SUBSCRIPTION, WRONG_ITEM, PRODUCT_ISSUE, etc. "
-                "Summarize what you found and what workflow applies. Pass this to Policy."
+                f"You are the Router agent for email support. {sys_context}\n\n"
+                "Classify the request into one of these workflows (from use_cases.csv):\n"
+                "SHIPPING_DELAY, WRONG_MISSING_ITEM, PRODUCT_NO_EFFECT, REFUND_REQUEST, "
+                "ORDER_MODIFICATION, POSITIVE_FEEDBACK, SUBSCRIPTION, DISCOUNT_PROMO\n\n"
+                "Use tools to gather context: get_order_details (order # like #1234), get_customer_orders, get_subscription_status. "
+                "If no order found, note that you need the order ID. "
+                "Output: classification + brief summary of what you found. Pass to Policy."
+                + WORKFLOW_REFERENCE
             ),
             tool_definitions=ROUTER_TOOLS,
             tool_executor=executor,
@@ -346,10 +388,12 @@ class EmailSession:
         policy = LLMAgent(
             name="PolicyAgent",
             system_prompt=(
-                f"You are the Policy agent. {sys_context} "
-                "You receive Router's classification. Check workflow rules using shopify_get_related_knowledge_source. "
-                "If we cannot safely proceed or policy requires human review, call the escalate tool. "
-                "Otherwise output: PROCEED with a brief note for the Executor."
+                f"You are the Policy agent. {sys_context}\n\n"
+                "You receive Router's classification. Apply the workflow rules below. "
+                "Use get_related_knowledge_source for FAQs/product info when needed. "
+                "Escalate when: cannot safely proceed, policy requires human review, or request outside scope (e.g. resend/return needs human). "
+                "Otherwise output: PROCEED with a brief note for Executor (which workflow + key constraints)."
+                + WORKFLOW_REFERENCE
             ),
             tool_definitions=POLICY_TOOLS,
             tool_executor=executor,
@@ -359,11 +403,14 @@ class EmailSession:
         executor_agent = LLMAgent(
             name="ExecutorAgent",
             system_prompt=(
-                f"You are the Executor agent. {sys_context} "
-                "You receive Router's analysis and Policy's decision. Execute the appropriate actions using tools: "
-                "refunds, store credit, subscription pause/cancel, order lookup, etc. "
-                "Produce the final customer-facing reply: helpful, concise, professional. "
-                "If Policy escalated, do not execute—acknowledge escalation only."
+                f"You are the Executor agent. {sys_context}\n\n"
+                "You receive Router's classification and Policy's decision. Execute using tools according to the workflow rules. "
+                "Tools: get_order_details, get_customer_orders, refund_order, create_store_credit, "
+                "get_subscription_status, pause_subscription, cancel_subscription, get_related_knowledge_source, escalate. "
+                "Follow workflow steps: e.g. SHIPPING_DELAY → status + wait promise by day + tracking; WRONG_MISSING_ITEM → request photos, offer reship first; "
+                "REFUND_REQUEST → store credit (10% bonus) before cash; POSITIVE_FEEDBACK → thank + offer feedback link. "
+                "Produce a helpful, concise, professional customer-facing reply. If Policy escalated, acknowledge escalation only."
+                + WORKFLOW_REFERENCE
             ),
             tool_definitions=EXECUTOR_TOOLS,
             tool_executor=executor,

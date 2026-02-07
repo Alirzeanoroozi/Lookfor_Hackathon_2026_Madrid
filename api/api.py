@@ -11,7 +11,9 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import json
 
 from db import init_db
 from email_session import EmailSession
@@ -145,4 +147,20 @@ def get_trace(session_id: int):
         escalated=t["escalated"],
         messages=t["messages"],
         tool_calls=t["tool_calls"],
+    )
+    
+@app.get("/sessions/{session_id}/trace/stream")
+def get_trace_stream(session_id: int):
+    session = EmailSession.load(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    t = session.get_trace()
+    trace = TraceResponse(**t)
+
+    def iter_chunks():
+        yield json.dumps(trace.model_dump())
+
+    return StreamingResponse(
+        iter_chunks(),
+        media_type="application/json",
     )
