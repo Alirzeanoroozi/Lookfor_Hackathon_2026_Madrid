@@ -86,11 +86,22 @@ export default function Page() {
             })}
 
             {conversation.tool_calls?.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1">
                 <WrenchIcon className="size-3" />
                 {conversation.tool_calls.map((tool) => (
                   <div key={tool.tool_name}>{tool.tool_name}</div>
                 ))}
+              </div>
+            )}
+
+            {conversation.actions_taken && conversation.actions_taken.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                <WrenchIcon className="size-3" />
+                {conversation.actions_taken
+                  .filter((action) => action.startsWith("esclate:"))
+                  .map((action) => (
+                    <div key={action}>{action}</div>
+                  ))}
               </div>
             )}
 
