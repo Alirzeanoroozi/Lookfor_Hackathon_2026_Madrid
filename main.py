@@ -10,12 +10,10 @@ Email support session demo.
 """
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from db import init_db
 from email_session import EmailSession, SessionTrace
-
 
 def print_trace(trace: SessionTrace | None) -> None:
     """Print observable trace to console."""
@@ -31,7 +29,6 @@ def print_trace(trace: SessionTrace | None) -> None:
     for a in trace.actions_taken:
         print(f"  - {a}")
     print()
-
 
 def main():
     init_db()
@@ -61,7 +58,6 @@ def main():
     print(f"Session {full['session_id']}, escalated: {full['escalated']}")
     print(f"Messages: {len(full['messages'])}")
     print(f"Tool calls: {len(full['tool_calls'])}")
-
 
 if __name__ == "__main__":
     main()

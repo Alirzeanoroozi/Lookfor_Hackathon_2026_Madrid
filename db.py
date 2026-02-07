@@ -7,12 +7,10 @@ from typing import Any
 
 DB_PATH = Path("lookfor.db")  # this file will be created in your project folder
 
-
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row  # optional: makes rows dict-like
     return conn
-
 
 def init_db():
     conn = get_connection()
@@ -142,7 +140,6 @@ def get_session(session_id: int) -> dict[str, Any]:
     conn.close()
     return dict(row) if row else None
 
-
 def is_session_escalated(session_id: int) -> bool:
     conn = get_connection()
     cur = conn.cursor()
@@ -150,7 +147,6 @@ def is_session_escalated(session_id: int) -> bool:
     row = cur.fetchone()
     conn.close()
     return bool(row and row["escalated"])
-
 
 def mark_session_escalated(session_id: int) -> None:
     conn = get_connection()
@@ -161,7 +157,6 @@ def mark_session_escalated(session_id: int) -> None:
     )
     conn.commit()
     conn.close()
-
 
 def add_message(
     session_id: int,

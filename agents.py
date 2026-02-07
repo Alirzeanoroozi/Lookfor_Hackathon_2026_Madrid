@@ -25,39 +25,6 @@ class Agent(Protocol):
     def act(self, messages: List[Message]) -> Optional[Message]:  # pragma: no cover - interface
         ...
 
-
-@dataclass
-class SimpleAgent:
-    """
-    Minimal example agent implementation you can customize.
-
-    Each agent can be configured with a set of tools.
-    Tools are thin wrappers around external systems (email, ticketing, policy lookup, memory, etc.)
-    defined in `tools.py`.
-    """
-
-    name: str
-    description: str
-    tools: List[Tool] = field(default_factory=list)
-
-    def act(self, messages: List[Message]) -> Optional[Message]:
-        # Very dumb example: just acknowledges the last user/agent message.
-        if not messages:
-            return None
-
-        last = messages[-1]
-        content = last.get("content", "")
-
-        # You can add logic here (pattern matching, tool calls, LLM calls, etc.)
-        reply = f"{self.name} saw: {content}"
-
-        return Message(
-            role="agent",
-            content=reply,
-            sender=self.name,
-        )
-
-
 @dataclass
 class LLMAgent:
     """
@@ -110,7 +77,6 @@ class LLMAgent:
             sender=self.name,
             tool_calls=tool_calls,
         )
-
 
 @dataclass
 class MultiAgentSystem:
@@ -176,4 +142,3 @@ class MultiAgentSystem:
                 break
 
         return messages
-

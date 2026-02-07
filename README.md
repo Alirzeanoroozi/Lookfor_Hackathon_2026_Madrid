@@ -53,7 +53,7 @@ Docker makes evaluation easy and reproducible.
 2. **Install and run:**
    ```bash
    pip install -r requirements.txt
-   uvicorn api:app --reload --host 0.0.0.0 --port 8000
+   python3 -m uvicorn api:app --reload
    ```
 
 ---

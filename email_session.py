@@ -1,17 +1,9 @@
-"""
-Email support session: session start, continuous memory, observable actions, escalation.
-
-Uses db.py for persistence and call_gpt.py for LLM + tool calling.
-"""
-
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
-
+from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
-
 load_dotenv()
 
 import db
@@ -26,9 +18,6 @@ from tools import (
     SkioPauseSubscriptionTool,
     SkioCancelSubscriptionTool,
 )
-
-
-# --- Tool definitions for OpenAI function calling ---
 
 TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     {
@@ -174,7 +163,6 @@ EXECUTOR_TOOLS = [
     )
 ]
 
-
 @dataclass
 class SessionTrace:
     """Observable trace: final message, tool calls, actions."""
@@ -182,7 +170,6 @@ class SessionTrace:
     final_message: str
     tool_calls: List[Dict[str, Any]] = field(default_factory=list)
     actions_taken: List[str] = field(default_factory=list)
-
 
 @dataclass
 class EmailSession:
@@ -322,8 +309,6 @@ class EmailSession:
         Process a new customer message and generate a reply via multi-agent pipeline:
         Router -> Policy -> Executor. Each agent can call tools.
         """
-        db.init_db()
-
         if db.is_session_escalated(self.session_id):
             return None
 

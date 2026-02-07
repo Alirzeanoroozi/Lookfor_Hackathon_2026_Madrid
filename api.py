@@ -3,6 +3,9 @@ FastAPI backend for the email support session system.
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from typing import Optional
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -13,10 +16,16 @@ from pydantic import BaseModel
 from db import init_db
 from email_session import EmailSession
 
+@asynccontextmanager
+async def lifespan(app):
+    init_db()
+    yield
+
 app = FastAPI(
     title="Lookfor Email Support API",
     description="Multi-agent email support with continuous memory and escalation",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -26,10 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def startup():
-    init_db()
 
 @app.get("/health")
 def health():
@@ -55,7 +60,7 @@ class ReplyRequest(BaseModel):
 class ReplyResponse(BaseModel):
     session_id: int
     escalated: bool
-    final_message: str | None
+    final_message: Optional[str]
     tool_calls: list[dict]
     actions_taken: list[str]
 
