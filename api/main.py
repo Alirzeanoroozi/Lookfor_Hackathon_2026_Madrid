@@ -35,39 +35,45 @@ def main():
     print(f"Started session {session.session_id}\n")
 
     # 2) First message
-    print(">>> Customer: Where is my order #1001?")
-    trace = session.reply("Where is my order #1001?")
+    print(">>> Customer: Hello, my order number is  Order #NP6664669  My order was to include 2 packs for adults and i received all packs for kids. Also, the packs were the old version of buzzpatch. The packs barely had a scent as if they were dried out. Alls to say they didn’t work and i would like a refund please.  Thank you Melissa Sent from my iPhone")
+    trace = session.reply("Hello, my order number is  Order #NP6664669  My order was to include 2 packs for adults and i received all packs for kids. Also, the packs were the old version of buzzpatch. The packs barely had a scent as if they were dried out. Alls to say they didn’t work and i would like a refund please.  Thank you Melissa Sent from my iPhone")
+    print(trace.final_message)
+    print([t.get("name") for t in trace.tool_calls])
     print_trace(trace)
 
-    # 3) Follow-up (continuous memory)
-    print(">>> Customer: Can you refund it instead?")
-    trace = session.reply("Can you refund it instead?")
-    print_trace(trace)
+    # # 3) Follow-up (continuous memory)
+    # print(">>> Customer: Can you refund it instead?")
+    # trace = session.reply("Can you refund it instead?")
+    # print(trace.final_message)
+    # print([t.get("name") for t in trace.tool_calls])
+    # # print_trace(trace)
     
-    # Example 4) Escalation scenario
-    print(">>> Customer: This is terrible, I want to escalate.")
-    trace = session.reply("This is terrible, I want to escalate.")
-    print_trace(trace)
+    # # Example 4) Escalation scenario
+    # # print(">>> Customer: This is terrible, I want to escalate.")
+    # # trace = session.reply("This is terrible, I want to escalate.")
+    # # print(trace.final_message)
+    # # print([t.get("name") for t in trace.tool_calls])
+    # # # print_trace(trace)
 
-    # Example 5) Product issue report
-    print(">>> Customer: The patches won't stick, can I get a replacement?")
-    trace = session.reply("The patches won't stick, can I get a replacement?")
-    print_trace(trace)
+    # # Example 5) Product issue report
+    # print(">>> Customer: The patches won't stick, can I get a replacement?")
+    # trace = session.reply("The patches won't stick, can I get a replacement?")
+    # print_trace(trace)
 
-    # Example 6) Return request
-    print(">>> Customer: I'd like to return my order, what's the process?")
-    trace = session.reply("I'd like to return my order, what's the process?")
-    print_trace(trace)
+    # # Example 6) Return request
+    # print(">>> Customer: I'd like to return my order, what's the process?")
+    # trace = session.reply("I'd like to return my order, what's the process?")
+    # print_trace(trace)
 
-    # Example 7) Discount code inquiry
-    print(">>> Customer: Can you give me a discount code?")
-    trace = session.reply("Can you give me a discount code?")
-    print_trace(trace)
+    # # Example 7) Discount code inquiry
+    # print(">>> Customer: Can you give me a discount code?")
+    # trace = session.reply("Can you give me a discount code?")
+    # print_trace(trace)
 
-    # Example 8) Shipping address update
-    print(">>> Customer: I moved, can I update my shipping address?")
-    trace = session.reply("I moved, can I update my shipping address?")
-    print_trace(trace)
+    # # Example 8) Shipping address update
+    # print(">>> Customer: I moved, can I update my shipping address?")
+    # trace = session.reply("I moved, can I update my shipping address?")
+    # print_trace(trace)
     # # 5) Update profile
     # print(">>> Update profile: model=gpt-4o-mini, prompt=You are a helpful assistant.")
     # session.update_profile("gpt-4o-mini", "You are a helpful assistant.")
@@ -79,9 +85,6 @@ def main():
     print(f"Session {full['session_id']}, escalated: {full['escalated']}")
     print(f"Messages: {len(full['messages'])}")
     print(f"Tool calls: {len(full['tool_calls'])}")
-    
-    
-    
 
 if __name__ == "__main__":
     main()

@@ -163,7 +163,7 @@ EXECUTOR_TOOLS = [
 ]
 
 # Workflows from use_cases.csv – agents use these to route and execute correctly
-WORKFLOW_REFERENCE = open("data/prompts.txt").read()
+WORKFLOW_REFERENCE = open("data/prompts.txt").read() + "\n" + open("data/examples_prompts.txt").read()
 # WORKFLOW_REFERENCE = """
 # ## Workflow Categories & Examples
 
@@ -257,7 +257,7 @@ class EmailSession:
         )
 
     @classmethod
-    def load(cls, session_id: int) -> Optional["EmailSession"]:
+    def load(cls, session_id: str) -> Optional["EmailSession"]:
         """Load an existing session from DB."""
         row = db.get_session(session_id)
         if not row:

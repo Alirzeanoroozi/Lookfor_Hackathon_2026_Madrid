@@ -53,7 +53,7 @@ class ReplyRequest(BaseModel):
     message: str
 
 class ReplyResponse(BaseModel):
-    session_id: int
+    session_id: str
     escalated: bool
     final_message: Optional[str]
     tool_calls: list[dict]
@@ -109,16 +109,22 @@ def get_all_conversations(limit: int = 100):
         for r in rows
     ]
 
-
 @app.post("/conversations/{session_id}", response_model=ReplyResponse)
-def reply(session_id: int, req: ReplyRequest):
+def reply(session_id: str, req: ReplyRequest):
     """
     Send a customer message and get the agent's reply.
     Returns null final_message when session is escalated (no automatic reply).
     """
     session = EmailSession.load(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        session = EmailSession.start(
+            customer_email="",
+            first_name="",
+            last_name="",
+            shopify_customer_id="",
+            model="",
+            prompt="",
+        )
 
     trace = session.reply(req.message)
 
