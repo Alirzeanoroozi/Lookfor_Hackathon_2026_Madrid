@@ -41,7 +41,15 @@ export default function Page() {
       )
     } else {
       const uuid = crypto.randomUUID()
-      createConversation({ prompt, id: uuid }, { onSuccess: () => router.push(`/chats/${uuid}`) })
+      createConversation(
+        { prompt, id: uuid },
+        {
+          onSuccess: () => {
+            setPrompt("")
+            router.push(`/chats/${uuid}`)
+          },
+        }
+      )
     }
   }
 
