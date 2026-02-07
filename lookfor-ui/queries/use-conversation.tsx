@@ -7,6 +7,7 @@ type ConversationResponse = {
   messages: Message[]
   escalated: boolean
   tool_calls: { tool_name: string }[]
+  actions_taken?: string[]
 }
 
 export type ConversationData = {
@@ -14,6 +15,7 @@ export type ConversationData = {
   messages: Message[]
   escalated: boolean
   tool_calls: { tool_name: string }[]
+  actions_taken?: string[]
 }
 
 export function useConversation(conversationId?: string) {
@@ -35,6 +37,7 @@ export function useConversation(conversationId?: string) {
         messages: data.messages,
         escalated: data.escalated,
         tool_calls: data.tool_calls,
+        actions_taken: data.actions_taken,
       } as ConversationData
     },
     enabled: !!conversationId,
