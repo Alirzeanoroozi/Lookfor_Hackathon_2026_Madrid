@@ -9,42 +9,16 @@
 ---
 
 # High-Level Architecture
+<img src="image.png" alt="High-Level Architecture Diagram" width="700"/>
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         FastAPI (api.py)                             │
-│  POST /sessions  │  POST /sessions/:id/reply  │  GET /sessions/:id   │
-└─────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    EmailSession (email_session.py)                   │
-│  - Session start (customer email, name, shopify_customer_id)         │
-│  - Multi-agent pipeline: Router → Policy → Executor                  │
-└─────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  MultiAgentSystem (agents.py)                                        │
-│  RouterAgent → PolicyAgent → ExecutorAgent (each LLM + tools)        │
-└─────────────────────────────────────────────────────────────────────┘
-          │                    │                    │
-          ▼                    ▼                    ▼
-┌──────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│  call_gpt    │    │  tools.py        │    │  db.py (SQLite)   │
-│  (OpenAI)    │    │  Shopify, Skio   │    │  sessions, msgs,  │
-│  + tools     │    │  knowledge       │    │  tool_calls,      │
-└──────────────┘    └──────────────────┘    │  escalations      │
-                                            └──────────────────┘
-```
 
 ### Agents
 
 The system uses a **multi-agent pipeline** (Router → Policy → Executor):
 
-- **RouterAgent**: Classifies the request and gathers context. Calls `shopify_get_order_details`, `shopify_get_customer_orders`, `skio_get_subscription_status`. Outputs workflow type (e.g. SHIPPING_DELAY, REFUND_REQUEST).
+- **RouterAgent**: Classifies the request and gathers context. Calls `get_order_details`, `get_customer_orders`, `get_subscription_status`. Outputs workflow type (e.g. SHIPPING_DELAY, REFUND_REQUEST).
 
-- **PolicyAgent**: Checks workflow rules via `shopify_get_related_knowledge_source`. Can call `escalate` when policy requires human review. Outputs PROCEED or escalation.
+- **PolicyAgent**: Checks workflow rules via `get_related_knowledge_source`. Can call `escalate` when policy requires human review. Outputs PROCEED or escalation.
 
 - **ExecutorAgent**: Executes actions (refunds, store credit, subscription pause/cancel, order lookup) and produces the final customer-facing reply.
 
@@ -57,8 +31,8 @@ The system uses a **multi-agent pipeline** (Router → Policy → Executor):
 
 ### Retrieval
 
-- **Knowledge retrieval**: `shopify_get_related_knowledge_source` returns FAQs, PDFs, blog articles, and Shopify pages given a question and optional product ID.
-- **Order / product data**: `shopify_get_order_details`, `shopify_get_customer_orders`, `shopify_get_product_details`, `shopify_get_product_recommendations`, `shopify_get_collection_recommendations` provide structured data from the hackathon API.
+- **Knowledge retrieval**: `get_related_knowledge_source` returns FAQs, PDFs, blog articles, and Shopify pages given a question and optional product ID.
+- **Order / product data**: `get_order_details`, `get_customer_orders`, `get_product_details`, `get_product_recommendations`, `get_collection_recommendations` provide structured data from the hackathon API.
 
 ### Tool Calls
 
