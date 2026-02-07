@@ -1,9 +1,3 @@
-"""
-OpenAI API client for calling GPT models.
-
-Loads API key and model from environment variables (.env file).
-"""
-
 import os
 import json
 from typing import Any, Dict, List, Optional
@@ -18,25 +12,6 @@ def call_gpt_with_tools(
     max_tokens: Optional[int] = 2048,
     max_tool_rounds: int = 5,
 ) -> Dict[str, Any]:
-    """
-    Call GPT with function/tool calling. Executes tools and loops until the model
-    returns a final text response (or max_tool_rounds is reached).
-
-    Args:
-        messages: Chat messages in OpenAI format (role, content, optionally tool_calls).
-        tools: List of tool definitions for OpenAI API, e.g.:
-            [{"type": "function", "function": {"name": "foo", "description": "...", "parameters": {...}}}]
-        tool_executor: Callable tool_executor(tool_name: str, arguments: dict) -> str
-            that executes a tool and returns its output as a string (e.g. JSON).
-        model, temperature, max_tokens: Passed to API.
-        max_tool_rounds: Max iterations of tool calls before stopping.
-
-    Returns:
-        Dict with:
-            - "content": final assistant text
-            - "tool_calls": list of {"name", "arguments", "result"}
-            - "usage": token usage
-    """
     api_key = os.environ.get("OPENAI_API_KEY")
     client = OpenAI(api_key=api_key)
     model_name = model or os.environ.get("OPENAI_MODEL", "gpt-4o-mini")

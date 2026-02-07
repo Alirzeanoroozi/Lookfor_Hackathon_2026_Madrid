@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -9,11 +8,11 @@ load_dotenv()
 import db
 from agents import LLMAgent, Message, MultiAgentSystem
 from tools import (
-    ShopifyGetCustomerOrdersTool,
-    ShopifyGetOrderDetailsTool,
+    GetCustomerOrdersTool,
+    GetOrderDetailsTool,
     GetRelatedKnowledgeSourceTool,
     RefundOrderTool,
-    ShopifyCreateStoreCreditTool,
+    CreateStoreCreditTool,
     GetSubscriptionStatusTool,
     PauseSubscriptionTool,
     CancelSubscriptionTool,
@@ -164,7 +163,7 @@ EXECUTOR_TOOLS = [
 ]
 
 # Workflows from use_cases.csv – agents use these to route and execute correctly
-WORKFLOW_REFERENCE = open("prompts.txt").read()
+WORKFLOW_REFERENCE = open("data/prompts.txt").read()
 # WORKFLOW_REFERENCE = """
 # ## Workflow Categories & Examples
 
@@ -225,6 +224,8 @@ class EmailSession:
     first_name: str
     last_name: str
     shopify_customer_id: str
+    model: str
+    prompt: str
     _tools: Dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -234,6 +235,8 @@ class EmailSession:
         first_name: str,
         last_name: str,
         shopify_customer_id: str,
+        model: str,
+        prompt: str,
     ) -> "EmailSession":
         """Start a new email session. Persists to DB."""
         db.init_db()
@@ -249,6 +252,8 @@ class EmailSession:
             first_name=first_name,
             last_name=last_name,
             shopify_customer_id=shopify_customer_id,
+            model=model,
+            prompt=prompt,
         )
 
     @classmethod
@@ -269,10 +274,10 @@ class EmailSession:
         if self._tools:
             return self._tools
         self._tools = {
-            "get_order_details": ShopifyGetOrderDetailsTool(),
-            "get_customer_orders": ShopifyGetCustomerOrdersTool(),
+            "get_order_details": GetOrderDetailsTool(),
+            "get_customer_orders": GetCustomerOrdersTool(),
             "refund_order": RefundOrderTool(),
-            "create_store_credit": ShopifyCreateStoreCreditTool(),
+            "create_store_credit": CreateStoreCreditTool(),
             "get_subscription_status": GetSubscriptionStatusTool(),
             "pause_subscription": PauseSubscriptionTool(),
             "cancel_subscription": CancelSubscriptionTool(),
@@ -372,11 +377,9 @@ class EmailSession:
             name="RouterAgent",
             system_prompt=(
                 f"You are the Router agent for email support. {sys_context}\n\n"
-                "Classify the request into one of these workflows (from use_cases.csv):\n"
+                "Classify the request into one of these workflows:\n"
                 "SHIPPING_DELAY, WRONG_MISSING_ITEM, PRODUCT_NO_EFFECT, REFUND_REQUEST, "
                 "ORDER_MODIFICATION, POSITIVE_FEEDBACK, SUBSCRIPTION, DISCOUNT_PROMO\n\n"
-                "Use tools to gather context: get_order_details (order # like #1234), get_customer_orders, get_subscription_status. "
-                "If no order found, note that you need the order ID. "
                 "Output: classification + brief summary of what you found. Pass to Policy."
                 + WORKFLOW_REFERENCE
             ),
@@ -390,7 +393,6 @@ class EmailSession:
             system_prompt=(
                 f"You are the Policy agent. {sys_context}\n\n"
                 "You receive Router's classification. Apply the workflow rules below. "
-                "Use get_related_knowledge_source for FAQs/product info when needed. "
                 "Escalate when: cannot safely proceed, policy requires human review, or request outside scope (e.g. resend/return needs human). "
                 "Otherwise output: PROCEED with a brief note for Executor (which workflow + key constraints)."
                 + WORKFLOW_REFERENCE
@@ -405,10 +407,6 @@ class EmailSession:
             system_prompt=(
                 f"You are the Executor agent. {sys_context}\n\n"
                 "You receive Router's classification and Policy's decision. Execute using tools according to the workflow rules. "
-                "Tools: get_order_details, get_customer_orders, refund_order, create_store_credit, "
-                "get_subscription_status, pause_subscription, cancel_subscription, get_related_knowledge_source, escalate. "
-                "Follow workflow steps: e.g. SHIPPING_DELAY → status + wait promise by day + tracking; WRONG_MISSING_ITEM → request photos, offer reship first; "
-                "REFUND_REQUEST → store credit (10% bonus) before cash; POSITIVE_FEEDBACK → thank + offer feedback link. "
                 "Produce a helpful, concise, professional customer-facing reply. If Policy escalated, acknowledge escalation only."
                 + WORKFLOW_REFERENCE
             ),
@@ -491,3 +489,8 @@ class EmailSession:
             "messages": [{"role": m["role"], "content": m["content"], "sender": m.get("sender")} for m in messages],
             "tool_calls": tool_calls,
         }
+
+    def update_profile(self, model: str, prompt: str):
+        """Update the profile for the session."""
+        db.update_profile(self.session_id, model, prompt)
+        self.model = model

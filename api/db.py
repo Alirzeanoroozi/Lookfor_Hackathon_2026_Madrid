@@ -1,11 +1,10 @@
 from __future__ import annotations
-
 import json
 import sqlite3
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path("lookfor.db")  # this file will be created in your project folder
+DB_PATH = Path("data/lookfor.db")  # this file will be created in your project folder
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -129,6 +128,19 @@ def create_session(
     conn.commit()
     conn.close()
     return session_id or 0
+
+
+def list_sessions(limit: int = 100) -> list[dict[str, Any]]:
+    """List all sessions, newest first."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, customer_email, first_name, last_name, shopify_customer_id, escalated, created_at FROM email_sessions ORDER BY id DESC LIMIT ?;",
+        (limit,),
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def get_session(session_id: int) -> dict[str, Any]:

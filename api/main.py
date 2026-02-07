@@ -1,14 +1,4 @@
 from __future__ import annotations
-
-"""
-Email support session demo.
-
-1) Start a session with customer info
-2) Send messages (continuous memory)
-3) Observe final message, tool calls, actions
-4) Escalation stops auto-replies
-"""
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -39,6 +29,8 @@ def main():
         first_name="Alice",
         last_name="Smith",
         shopify_customer_id="gid://shopify/Customer/7424155189325",
+        model="default",
+        prompt="You are a helpful assistant that can answer questions and help with tasks."
     )
     print(f"Started session {session.session_id}\n")
 
@@ -51,6 +43,35 @@ def main():
     print(">>> Customer: Can you refund it instead?")
     trace = session.reply("Can you refund it instead?")
     print_trace(trace)
+    
+    # Example 4) Escalation scenario
+    print(">>> Customer: This is terrible, I want to escalate.")
+    trace = session.reply("This is terrible, I want to escalate.")
+    print_trace(trace)
+
+    # Example 5) Product issue report
+    print(">>> Customer: The patches won't stick, can I get a replacement?")
+    trace = session.reply("The patches won't stick, can I get a replacement?")
+    print_trace(trace)
+
+    # Example 6) Return request
+    print(">>> Customer: I'd like to return my order, what's the process?")
+    trace = session.reply("I'd like to return my order, what's the process?")
+    print_trace(trace)
+
+    # Example 7) Discount code inquiry
+    print(">>> Customer: Can you give me a discount code?")
+    trace = session.reply("Can you give me a discount code?")
+    print_trace(trace)
+
+    # Example 8) Shipping address update
+    print(">>> Customer: I moved, can I update my shipping address?")
+    trace = session.reply("I moved, can I update my shipping address?")
+    print_trace(trace)
+    # # 5) Update profile
+    # print(">>> Update profile: model=gpt-4o-mini, prompt=You are a helpful assistant.")
+    # session.update_profile("gpt-4o-mini", "You are a helpful assistant.")
+    # print(f"Updated profile for session {session.session_id}\n")
 
     # 4) Full trace for inspection
     full = session.get_trace()
@@ -58,6 +79,9 @@ def main():
     print(f"Session {full['session_id']}, escalated: {full['escalated']}")
     print(f"Messages: {len(full['messages'])}")
     print(f"Tool calls: {len(full['tool_calls'])}")
+    
+    
+    
 
 if __name__ == "__main__":
     main()

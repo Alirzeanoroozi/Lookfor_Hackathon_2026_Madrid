@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any, Dict, Protocol
 import json
@@ -80,7 +79,6 @@ class Tool(Protocol):
     def run(self, **kwargs: Any) -> Dict[str, Any]:  # pragma: no cover - interface
         ...
 
-
 @dataclass
 class EmailTool:
     """
@@ -111,7 +109,6 @@ class EmailTool:
             "subject": subject,
             "body": body,
         }
-
 
 @dataclass
 class TicketingTool:
@@ -157,7 +154,6 @@ class TicketingTool:
                 "message": f"Unsupported action '{action}' or missing ticket_id.",
             }
 
-
 @dataclass
 class PolicyTool:
     """
@@ -179,7 +175,6 @@ class PolicyTool:
             "query": query,
             "answer": "Policy lookup is not yet implemented. This is a stub response.",
         }
-
 
 @dataclass
 class MemoryTool:
@@ -222,9 +217,9 @@ class MemoryTool:
             }
 
 @dataclass
-class ShopifyAddTagsTool:
+class AddTagsTool:
     """
-    Tool: `shopify_add_tags`
+    Tool: `add_tags`
 
     Add tags to a Shopify resource (order, draft order, customer, product, etc.)
     using the hackathon API:
@@ -239,7 +234,7 @@ class ShopifyAddTagsTool:
     `api_url` can be passed explicitly or taken from the `API_URL` env var.
     """
 
-    name: str = "shopify_add_tags"
+    name: str = "add_tags"
     description: str = "Add tags to a Shopify resource via the hackathon API."
     api_url: str | None = None
 
@@ -253,17 +248,16 @@ class ShopifyAddTagsTool:
         payload = {"id": id, "tags": tags}
         return _post_json("/hackathon/add_tags", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyCancelOrderTool:
+class CancelOrderTool:
     """
-    Tool: `shopify_cancel_order`
+    Tool: `cancel_order`
 
     Cancel an order based on order ID and reason.
     """
 
-    name: str = "shopify_cancel_order"
-    description: str = "Cancel an order via the hackathon API."
+    name: str = "cancel_order"
+    description: str = "Cancel an order via API."
     api_url: str | None = None
 
     def run(
@@ -288,17 +282,16 @@ class ShopifyCancelOrderTool:
         }
         return _post_json("/hackathon/cancel_order", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyCreateDiscountCodeTool:
+class CreateDiscountCodeTool:
     """
-    Tool: `shopify_create_discount_code`
+    Tool: `create_discount_code`
 
     Create a discount code for the customer.
     """
 
-    name: str = "shopify_create_discount_code"
-    description: str = "Create a discount code via the hackathon API."
+    name: str = "create_discount_code"
+    description: str = "Create a discount code via API."
     api_url: str | None = None
 
     def run(
@@ -317,51 +310,48 @@ class ShopifyCreateDiscountCodeTool:
         }
         return _post_json("/hackathon/create_discount_code", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyCreateDraftOrderTool:
+class CreateDraftOrderTool:
     """
-    Tool: `shopify_create_draft_order`
+    Tool: `create_draft_order`
 
     Create a draft order. The exact params schema is defined in the external spec;
     this wrapper forwards any provided keyword args directly as JSON.
     """
 
-    name: str = "shopify_create_draft_order"
+    name: str = "create_draft_order"
     description: str = "Create a draft order via the hackathon API."
     api_url: str | None = None
 
     def run(self, **payload: Any) -> Dict[str, Any]:
         return _post_json("/hackathon/create_draft_order", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyCreateReturnTool:
+class CreateReturnTool:
     """
-    Tool: `shopify_create_return`
+    Tool: `create_return`
 
     Create a Return for a given order.
     """
 
-    name: str = "shopify_create_return"
-    description: str = "Create a return via the hackathon API."
+    name: str = "create_return"
+    description: str = "Create a return via API."
     api_url: str | None = None
 
     def run(self, orderId: str) -> Dict[str, Any]:
         payload = {"orderId": orderId}
         return _post_json("/hackathon/create_return", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyCreateStoreCreditTool:
+class CreateStoreCreditTool:
     """
-    Tool: `shopify_create_store_credit`
+    Tool: `create_store_credit`
 
     Credit store credit to a customer or StoreCreditAccount.
     """
 
-    name: str = "shopify_create_store_credit"
-    description: str = "Create store credit via the hackathon API."
+    name: str = "create_store_credit"
+    description: str = "Create store credit via API."
     api_url: str | None = None
 
     def run(
@@ -377,17 +367,16 @@ class ShopifyCreateStoreCreditTool:
         }
         return _post_json("/hackathon/create_store_credit", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyGetCollectionRecommendationsTool:
+class GetCollectionRecommendationsTool:
     """
-    Tool: `shopify_get_collection_recommendations`
+    Tool: `get_collection_recommendations`
 
     Generate collection recommendations based on text queries.
     """
 
-    name: str = "shopify_get_collection_recommendations"
-    description: str = "Get collection recommendations via the hackathon API."
+    name: str = "get_collection_recommendations"
+    description: str = "Get collection recommendations via API."
     api_url: str | None = None
 
     def run(self, queryKeys: list[str]) -> Dict[str, Any]:
@@ -398,17 +387,16 @@ class ShopifyGetCollectionRecommendationsTool:
             api_url=self.api_url,
         )
 
-
 @dataclass
-class ShopifyGetCustomerOrdersTool:
+class GetCustomerOrdersTool:
     """
-    Tool: `shopify_get_customer_orders`
+    Tool: `get_customer_orders`
 
     Get customer orders.
     """
 
-    name: str = "shopify_get_customer_orders"
-    description: str = "Get customer orders via the hackathon API."
+    name: str = "get_customer_orders"
+    description: str = "Get customer orders via API."
     api_url: str | None = None
 
     def run(self, email: str, after: str, limit: int) -> Dict[str, Any]:
@@ -419,9 +407,8 @@ class ShopifyGetCustomerOrdersTool:
         }
         return _post_json("/hackathon/get_customer_orders", payload, api_url=self.api_url)
 
-
 @dataclass
-class ShopifyGetOrderDetailsTool:
+class GetOrderDetailsTool:
     """
     Tool: `get_order_details`
 
@@ -429,7 +416,7 @@ class ShopifyGetOrderDetailsTool:
     """
 
     name: str = "get_order_details"
-    description: str = "Get order details via the hackathon API."
+    description: str = "Get order details via API."
     api_url: str | None = None
 
     def run(self, orderId: str) -> Dict[str, Any]:
@@ -584,7 +571,6 @@ class GetSubscriptionStatusTool:
             payload,
             api_url=self.api_url,
         )
-
 
 @dataclass
 class PauseSubscriptionTool:

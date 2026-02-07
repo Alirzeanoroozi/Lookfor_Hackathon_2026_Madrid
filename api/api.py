@@ -1,21 +1,14 @@
-"""
-FastAPI backend for the email support session system.
-"""
 from __future__ import annotations
-
 from contextlib import asynccontextmanager
 from typing import Optional
-
 from dotenv import load_dotenv
 load_dotenv()
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-import json
 
-from db import init_db
+from pydantic import BaseModel
+
+from db import init_db, list_sessions
 from email_session import EmailSession
 
 @asynccontextmanager
@@ -81,40 +74,43 @@ class TraceResponse(BaseModel):
     messages: list[dict]
     tool_calls: list[dict]
 
-@app.post("/sessions", response_model=SessionStartResponse)
-def start_session(req: SessionStartRequest):
-    """Start a new email support session."""
-    session = EmailSession.start(
-        customer_email=req.customer_email,
-        first_name=req.first_name,
-        last_name=req.last_name,
-        shopify_customer_id=req.shopify_customer_id,
-    )
-    return SessionStartResponse(
-        session_id=session.session_id,
-        customer_email=session.customer_email,
-        first_name=session.first_name,
-        last_name=session.last_name,
-        shopify_customer_id=session.shopify_customer_id,
-    )
 
-@app.get("/sessions/{session_id}", response_model=SessionResponse)
-def get_session(session_id: int):
-    """Get session info."""
-    session = EmailSession.load(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    row = session.get_trace()
-    return SessionResponse(
-        session_id=session.session_id,
-        customer_email=session.customer_email,
-        first_name=session.first_name,
-        last_name=session.last_name,
-        shopify_customer_id=session.shopify_customer_id,
-        escalated=row.get("escalated", False),
-    )
+class ConversationSummary(BaseModel):
+    session_id: int
+    customer_email: str
+    first_name: str
+    last_name: str
+    shopify_customer_id: str
+    escalated: bool
+    created_at: str
+    
+class UpdateProfileRequest(BaseModel):
+    model: str
+    prompt: str
 
-@app.post("/sessions/{session_id}/reply", response_model=ReplyResponse)
+class UpdateProfileResponse(BaseModel):
+    success: bool
+
+@app.get("/conversations", response_model=list[ConversationSummary])
+def get_all_conversations(limit: int = 100):
+    """Get all conversations (sessions), newest first."""
+    init_db()
+    rows = list_sessions(limit=limit)
+    return [
+        ConversationSummary(
+            session_id=r["id"],
+            customer_email=r["customer_email"],
+            first_name=r["first_name"],
+            last_name=r["last_name"],
+            shopify_customer_id=r["shopify_customer_id"],
+            escalated=bool(r.get("escalated")),
+            created_at=r.get("created_at", "") or "",
+        )
+        for r in rows
+    ]
+
+
+@app.post("/conversations/{session_id}", response_model=ReplyResponse)
 def reply(session_id: int, req: ReplyRequest):
     """
     Send a customer message and get the agent's reply.
@@ -134,7 +130,7 @@ def reply(session_id: int, req: ReplyRequest):
         actions_taken=trace.actions_taken if trace else [],
     )
 
-@app.get("/sessions/{session_id}/trace", response_model=TraceResponse)
+@app.get("/conversations/{session_id}", response_model=TraceResponse)
 def get_trace(session_id: int):
     """Get full session trace: messages, tool calls, escalation status."""
     session = EmailSession.load(session_id)
@@ -148,19 +144,12 @@ def get_trace(session_id: int):
         messages=t["messages"],
         tool_calls=t["tool_calls"],
     )
-    
-@app.get("/sessions/{session_id}/trace/stream")
-def get_trace_stream(session_id: int):
+
+def update_profile(session_id: int, req: UpdateProfileRequest):
     session = EmailSession.load(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    t = session.get_trace()
-    trace = TraceResponse(**t)
-
-    def iter_chunks():
-        yield json.dumps(trace.model_dump())
-
-    return StreamingResponse(
-        iter_chunks(),
-        media_type="application/json",
+    session.update_profile(req.model, req.prompt)
+    return UpdateProfileResponse(
+        success=True,
     )
