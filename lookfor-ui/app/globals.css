@@ -132,5 +132,5 @@
 
 .textimation-incorrectChar {
 	transition: all 0.2s ease-in-out;
-	opacity: 0.2;
+	opacity: 0;
 }

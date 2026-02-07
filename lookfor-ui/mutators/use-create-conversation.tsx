@@ -52,6 +52,7 @@ export function useCreateConversation() {
                 { role: "assistant", content: data.final_message },
               ],
               escalated: data.escalated,
+              tool_calls: [],
             }
           }
           return {
