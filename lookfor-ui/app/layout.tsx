@@ -1,7 +1,7 @@
+import "./globals.css"
+
 import type { Metadata } from "next"
 import { Geist, Geist_Mono, Nunito_Sans } from "next/font/google"
-
-import "./globals.css"
 
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/providers"
