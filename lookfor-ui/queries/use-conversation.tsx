@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
-import type { Message } from "@/stores/conversation-store"
+import type { Message } from "@/stores/input-store"
 
 type ConversationResponse = {
   session_id: string
@@ -14,7 +14,7 @@ export type ConversationData = {
   escalated: boolean
 }
 
-export function useConversation(conversationId: string) {
+export function useConversation(conversationId?: string) {
   return useQuery({
     queryKey: ["conversations", conversationId],
     queryFn: async () => {
@@ -34,5 +34,6 @@ export function useConversation(conversationId: string) {
         escalated: data.escalated,
       } as ConversationData
     },
+    enabled: !!conversationId,
   })
 }

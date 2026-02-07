@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { ArrowUpIcon } from "lucide-react"
 import { Textimation } from "textimation"
 
@@ -8,19 +8,27 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { useCreateConversation } from "@/mutators/use-create-conversation"
-import { useConversation } from "@/stores/conversation-store"
+import { useConversation } from "@/queries/use-conversation"
+import { useInput } from "@/stores/input-store"
 
 export default function Page() {
   const router = useRouter()
-  const prompt = useConversation((s) => s.prompt)
-  const setPrompt = useConversation((s) => s.setPrompt)
+  const prompt = useInput((s) => s.prompt)
+  const setPrompt = useInput((s) => s.setPrompt)
+  const params = useParams()
+  const chatId = params.params?.[0]
 
+  const { data: conversation, isLoading } = useConversation(chatId)
   const { mutate: createConversation, isPending } = useCreateConversation()
 
   const handleSend = () => {
     if (!prompt) return
     const uuid = crypto.randomUUID()
     createConversation({ prompt, id: uuid }, { onSuccess: () => router.push(`/chats/${uuid}`) })
+  }
+
+  if (conversation) {
+    return <pre>{JSON.stringify(conversation, null, 2)}</pre>
   }
 
   return (
