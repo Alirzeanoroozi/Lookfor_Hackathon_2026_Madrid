@@ -6,7 +6,6 @@ import json
 import os
 from urllib import error, request
 
-
 def _post_json(path: str, payload: Dict[str, Any], api_url: str | None = None) -> Dict[str, Any]:
     """
     Helper to call the hackathon API and normalize responses to the standard contract:
@@ -64,7 +63,6 @@ def _post_json(path: str, payload: Dict[str, Any], api_url: str | None = None) -
             "success": False,
             "error": f"Network error when calling API: {e}",
         }
-
 
 class Tool(Protocol):
     """
@@ -223,7 +221,6 @@ class MemoryTool:
                 "message": f"Unsupported action '{action}'.",
             }
 
-
 @dataclass
 class ShopifyAddTagsTool:
     """
@@ -254,7 +251,7 @@ class ShopifyAddTagsTool:
             }
 
         payload = {"id": id, "tags": tags}
-        return _post_json("/hackhaton/add_tags", payload, api_url=self.api_url)
+        return _post_json("/hackathon/add_tags", payload, api_url=self.api_url)
 
 
 @dataclass
@@ -277,8 +274,9 @@ class ShopifyCancelOrderTool:
         restock: bool,
         staffNote: str,
         refundMode: str,
-        storeCredit: Dict[str, Any] | None = None,
+        storeCredit: Dict[str, Any],
     ) -> Dict[str, Any]:
+        """storeCredit required by API; use {"expiresAt": null} when refundMode is ORIGINAL."""
         payload: Dict[str, Any] = {
             "orderId": orderId,
             "reason": reason,
@@ -286,11 +284,9 @@ class ShopifyCancelOrderTool:
             "restock": restock,
             "staffNote": staffNote,
             "refundMode": refundMode,
+            "storeCredit": storeCredit,
         }
-        if storeCredit is not None:
-            payload["storeCredit"] = storeCredit
-
-        return _post_json("/hackhaton/cancel_order", payload, api_url=self.api_url)
+        return _post_json("/hackathon/cancel_order", payload, api_url=self.api_url)
 
 
 @dataclass
@@ -307,18 +303,19 @@ class ShopifyCreateDiscountCodeTool:
 
     def run(
         self,
-        discount_type: str,
+        type: str,
         value: float,
         duration: int,
         productIds: list[str],
     ) -> Dict[str, Any]:
+        """type: 'percentage' (0-1) or 'fixed' (absolute amount). duration: hours (e.g. 48)."""
         payload = {
-            "type": discount_type,
+            "type": type,
             "value": value,
             "duration": duration,
-            "productIds": productIds,
+            "productIds": productIds or [],
         }
-        return _post_json("/hackhaton/create_discount_code", payload, api_url=self.api_url)
+        return _post_json("/hackathon/create_discount_code", payload, api_url=self.api_url)
 
 
 @dataclass
@@ -335,7 +332,7 @@ class ShopifyCreateDraftOrderTool:
     api_url: str | None = None
 
     def run(self, **payload: Any) -> Dict[str, Any]:
-        return _post_json("/hackhaton/create_draft_order", payload, api_url=self.api_url)
+        return _post_json("/hackathon/create_draft_order", payload, api_url=self.api_url)
 
 
 @dataclass
@@ -352,7 +349,7 @@ class ShopifyCreateReturnTool:
 
     def run(self, orderId: str) -> Dict[str, Any]:
         payload = {"orderId": orderId}
-        return _post_json("/hackhaton/create_return", payload, api_url=self.api_url)
+        return _post_json("/hackathon/create_return", payload, api_url=self.api_url)
 
 
 @dataclass
@@ -378,7 +375,7 @@ class ShopifyCreateStoreCreditTool:
             "creditAmount": creditAmount,
             "expiresAt": expiresAt,
         }
-        return _post_json("/hackhaton/create_store_credit", payload, api_url=self.api_url)
+        return _post_json("/hackathon/create_store_credit", payload, api_url=self.api_url)
 
 
 @dataclass
@@ -396,7 +393,7 @@ class ShopifyGetCollectionRecommendationsTool:
     def run(self, queryKeys: list[str]) -> Dict[str, Any]:
         payload = {"queryKeys": queryKeys}
         return _post_json(
-            "/hackhaton/get_collection_recommendations",
+            "/hackathon/get_collection_recommendations",
             payload,
             api_url=self.api_url,
         )
@@ -420,36 +417,36 @@ class ShopifyGetCustomerOrdersTool:
             "after": after,
             "limit": limit,
         }
-        return _post_json("/hackhaton/get_customer_orders", payload, api_url=self.api_url)
+        return _post_json("/hackathon/get_customer_orders", payload, api_url=self.api_url)
 
 
 @dataclass
 class ShopifyGetOrderDetailsTool:
     """
-    Tool: `shopify_get_order_details`
+    Tool: `get_order_details`
 
     Fetch detailed information for a single order by ID.
     """
 
-    name: str = "shopify_get_order_details"
+    name: str = "get_order_details"
     description: str = "Get order details via the hackathon API."
     api_url: str | None = None
 
     def run(self, orderId: str) -> Dict[str, Any]:
         payload = {"orderId": orderId}
-        return _post_json("/hackhaton/get_order_details", payload, api_url=self.api_url)
+        return _post_json("/hackathon/get_order_details", payload, api_url=self.api_url)
 
 
 @dataclass
-class ShopifyGetProductDetailsTool:
+class GetProductDetailsTool:
     """
-    Tool: `shopify_get_product_details`
+    Tool: `get_product_details`
 
     Retrieve product information by product ID, name, or key feature.
     """
 
-    name: str = "shopify_get_product_details"
-    description: str = "Get product details via the hackathon API."
+    name: str = "get_product_details"
+    description: str = "Get product details via API."
     api_url: str | None = None
 
     def run(self, queryType: str, queryKey: str) -> Dict[str, Any]:
@@ -457,39 +454,38 @@ class ShopifyGetProductDetailsTool:
             "queryType": queryType,
             "queryKey": queryKey,
         }
-        return _post_json("/hackhaton/get_product_details", payload, api_url=self.api_url)
-
+        return _post_json("/hackathon/get_product_details", payload, api_url=self.api_url)
 
 @dataclass
-class ShopifyGetProductRecommendationsTool:
+class GetProductRecommendationsTool:
     """
-    Tool: `shopify_get_product_recommendations`
+    Tool: `get_product_recommendations`
 
     Generate product recommendations based on keyword intents.
     """
 
-    name: str = "shopify_get_product_recommendations"
-    description: str = "Get product recommendations via the hackathon API."
+    name: str = "get_product_recommendations"
+    description: str = "Get product recommendations via API."
     api_url: str | None = None
 
     def run(self, queryKeys: list[str]) -> Dict[str, Any]:
         payload = {"queryKeys": queryKeys}
         return _post_json(
-            "/hackhaton/get_product_recommendations",
+            "/hackathon/get_product_recommendations",
             payload,
             api_url=self.api_url,
         )
 
 
 @dataclass
-class ShopifyGetRelatedKnowledgeSourceTool:
+class GetRelatedKnowledgeSourceTool:
     """
-    Tool: `shopify_get_related_knowledge_source`
+    Tool: `get_related_knowledge_source`
 
     Retrieve related FAQs, PDFs, blog articles, and Shopify pages.
     """
 
-    name: str = "shopify_get_related_knowledge_source"
+    name: str = "get_related_knowledge_source"
     description: str = "Get related knowledge sources via the hackathon API."
     api_url: str | None = None
 
@@ -499,22 +495,21 @@ class ShopifyGetRelatedKnowledgeSourceTool:
             "specificToProductId": specificToProductId,
         }
         return _post_json(
-            "/hackhaton/get_related_knowledge_source",
+            "/hackathon/get_related_knowledge_source",
             payload,
             api_url=self.api_url,
         )
 
-
 @dataclass
-class ShopifyRefundOrderTool:
+class RefundOrderTool:
     """
-    Tool: `shopify_refund_order`
+    Tool: `refund_order`
 
     Refund an order.
     """
 
-    name: str = "shopify_refund_order"
-    description: str = "Refund an order via the hackathon API."
+    name: str = "refund_order"
+    description: str = "Refund an order via API."
     api_url: str | None = None
 
     def run(self, orderId: str, refundMethod: str) -> Dict[str, Any]:
@@ -522,19 +517,18 @@ class ShopifyRefundOrderTool:
             "orderId": orderId,
             "refundMethod": refundMethod,
         }
-        return _post_json("/hackhaton/refund_order", payload, api_url=self.api_url)
-
+        return _post_json("/hackathon/refund_order", payload, api_url=self.api_url)
 
 @dataclass
-class ShopifyUpdateOrderShippingAddressTool:
+class UpdateOrderShippingAddressTool:
     """
-    Tool: `shopify_update_order_shipping_address`
+    Tool: `update_order_shipping_address`
 
     Update an order's shipping address.
     """
 
-    name: str = "shopify_update_order_shipping_address"
-    description: str = "Update order shipping address via the hackathon API."
+    name: str = "update_order_shipping_address"
+    description: str = "Update order shipping address via API."
     api_url: str | None = None
 
     def run(self, orderId: str, shippingAddress: Dict[str, Any]) -> Dict[str, Any]:
@@ -543,14 +537,13 @@ class ShopifyUpdateOrderShippingAddressTool:
             "shippingAddress": shippingAddress,
         }
         return _post_json(
-            "/hackhaton/update_order_shipping_address",
+            "/hackathon/update_order_shipping_address",
             payload,
             api_url=self.api_url,
         )
 
-
 @dataclass
-class SkioCancelSubscriptionTool:
+class CancelSubscriptionTool:
     """
     Tool: `skio_cancel_subscription`
 
@@ -567,43 +560,42 @@ class SkioCancelSubscriptionTool:
             "cancellationReasons": cancellationReasons,
         }
         return _post_json(
-            "/hackhaton/cancel-subscription",
+            "/hackathon/cancel-subscription",
             payload,
             api_url=self.api_url,
         )
 
-
 @dataclass
-class SkioGetSubscriptionStatusTool:
+class GetSubscriptionStatusTool:
     """
-    Tool: `skio_get_subscription_status`
+    Tool: `get_subscription_status`
 
     Get the subscription status of a customer.
     """
 
-    name: str = "skio_get_subscription_status"
-    description: str = "Get Skio subscription status via the hackathon API."
+    name: str = "get_subscription_status"
+    description: str = "Get subscription status via API."
     api_url: str | None = None
 
     def run(self, email: str) -> Dict[str, Any]:
         payload = {"email": email}
         return _post_json(
-            "/hackhaton/get-subscription-status",
+            "/hackathon/get-subscriptions",
             payload,
             api_url=self.api_url,
         )
 
 
 @dataclass
-class SkioPauseSubscriptionTool:
+class PauseSubscriptionTool:
     """
-    Tool: `skio_pause_subscription`
+    Tool: `pause_subscription`
 
     Pause a subscription.
     """
 
-    name: str = "skio_pause_subscription"
-    description: str = "Pause a Skio subscription via the hackathon API."
+    name: str = "pause_subscription"
+    description: str = "Pause a subscription via API."
     api_url: str | None = None
 
     def run(self, subscriptionId: str, pausedUntil: str) -> Dict[str, Any]:
@@ -612,50 +604,47 @@ class SkioPauseSubscriptionTool:
             "pausedUntil": pausedUntil,
         }
         return _post_json(
-            "/hackhaton/pause-subscription",
+            "/hackathon/pause-subscription",
             payload,
             api_url=self.api_url,
         )
 
-
 @dataclass
-class SkioSkipNextOrderSubscriptionTool:
+class SkipNextOrderSubscriptionTool:
     """
-    Tool: `skio_skip_next_order_subscription`
+    Tool: `skip_next_order_subscription`
 
     Skip the next order of an ongoing subscription.
     """
 
-    name: str = "skio_skip_next_order_subscription"
-    description: str = "Skip the next Skio subscription order via the hackathon API."
+    name: str = "skip_next_order_subscription"
+    description: str = "Skip the next subscription order via API."
     api_url: str | None = None
 
     def run(self, subscriptionId: str) -> Dict[str, Any]:
         payload = {"subscriptionId": subscriptionId}
         return _post_json(
-            "/hackhaton/skip-next-order-subscription",
+            "/hackathon/skip-next-order-subscription",
             payload,
             api_url=self.api_url,
         )
 
-
 @dataclass
-class SkioUnpauseSubscriptionTool:
+class UnpauseSubscriptionTool:
     """
-    Tool: `skio_unpause_subscription`
+    Tool: `unpause_subscription`
 
     Unpause a paused subscription.
     """
 
-    name: str = "skio_unpause_subscription"
-    description: str = "Unpause a Skio subscription via the hackathon API."
+    name: str = "unpause_subscription"
+    description: str = "Unpause a subscription via API."
     api_url: str | None = None
 
     def run(self, subscriptionId: str) -> Dict[str, Any]:
         payload = {"subscriptionId": subscriptionId}
         return _post_json(
-            "/hackhaton/unpause-subscription",
+            "/hackathon/unpause-subscription",
             payload,
             api_url=self.api_url,
         )
-
