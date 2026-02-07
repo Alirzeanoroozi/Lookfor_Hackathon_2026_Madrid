@@ -137,7 +137,7 @@ def reply(session_id: str, req: ReplyRequest):
     )
 
 @app.get("/conversations/{session_id}", response_model=TraceResponse)
-def get_trace(session_id: int):
+def get_trace(session_id: str):
     """Get full session trace: messages, tool calls, escalation status."""
     session = EmailSession.load(session_id)
     if not session:
